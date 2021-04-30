@@ -13,6 +13,116 @@ sys.path.append(os.getcwd())
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from public.public import logSpinBox, doubleSlider
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+
+# class Myplot for plotting with matplotlib
+class Myplot(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=3, dpi=100):
+        # new figure
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+
+        # 主窗口
+        d1, d2, d = 0.05, 0.05, 0.1
+        self.ax = self.fig.add_axes([d1, d2, 1 - 2 * d1 - d, 1 - 2 * d2])
+
+        self.ax1 = self.fig.add_axes([1 - d, 0, d, 1])
+        self.init_ax(self.ax1)
+
+        font_color, font_size = "white", 15
+
+        y1, y2, dy = 0.95, 0.9, 0.1
+        self.fixed_text = {
+            "f1": self.ax1.text(0, y1, "f1/Hz", c=font_color, fontsize=font_size),
+            "f2": self.ax1.text(0, y1 - dy, "f2/Hz", c=font_color, fontsize=font_size),
+            "Y1": self.ax1.text(
+                0, y1 - 2 * dy, "Y1/dB", c=font_color, fontsize=font_size
+            ),
+            "Y2": self.ax1.text(
+                0, y1 - 3 * dy, "Y2/dB", c=font_color, fontsize=font_size
+            ),
+            "df": self.ax1.text(
+                0, y1 - 4 * dy, r"$\Delta$f/Hz", c=font_color, fontsize=font_size
+            ),
+            "dY": self.ax1.text(
+                0, y1 - 5 * dy, r"$\Delta$Y/dB", c=font_color, fontsize=font_size
+            ),
+        }
+
+        self.data = {
+            "f1": self.ax1.text(
+                1,
+                y2,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+            "f2": self.ax1.text(
+                1,
+                y2 - dy,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+            "Y1": self.ax1.text(
+                1,
+                y2 - 2 * dy,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+            "Y2": self.ax1.text(
+                1,
+                y2 - 3 * dy,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+            "df": self.ax1.text(
+                1,
+                y2 - 4 * dy,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+            "dY": self.ax1.text(
+                1,
+                y2 - 5 * dy,
+                "0",
+                c=font_color,
+                fontsize=font_size,
+                horizontalalignment="right",
+            ),
+        }
+
+        for i in range(9):
+            self.ax1.axhline(y=0.1 * (i + 1), c="gray")
+
+        # initial figure
+        self.compute_initial_figure()
+
+        # size policy
+        FigureCanvas.setSizePolicy(
+            self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
+        FigureCanvas.updateGeometry(self)
+
+    def init_ax(self, ax):
+        ax.set_xlim((0, 1))
+        ax.set_ylim((0, 1))
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    def compute_initial_figure(self):
+        pass
 
 
 class Ui_MainWindow(object):
@@ -21,347 +131,132 @@ class Ui_MainWindow(object):
 
         # 获取显示器分辨率大小
         self.screenRect = self.desktop.screenGeometry()
-        # self.height = self.screenRect.height()
-        # self.width = self.screenRect.width()
-        # WIDTH, HEIGHT = 1800, 1000
-        WIDTH = int(0.9 * self.screenRect.width())
+        WIDTH = int(0.8 * self.screenRect.width())
         HEIGHT = int(0.7 * self.screenRect.height())
 
-        winW = 2 * WIDTH // 3
-        sliderW, sliderH = 15, HEIGHT
-        sliderX, sliderY = winW, 0
-
-        sx = [i * sliderW + sliderX for i in range(4)]
-
-        itemW, itemH = 100, 40
-        btnW, btnH = itemW, 40
-        labelW, labelH = itemW, itemH
-        inputW, inputH = 150, itemH
-        selectW, selectH = 150, itemH
-        funcW, funcH = WIDTH - winW - 2 * marginL - 5 * sliderW, HEIGHT
-        funcX, funcY = winW + 2 * marginL + 4 * sliderW, 0
-        itemW = max([btnW, labelW, inputW])
-        itemNX, itemNY = 4, 20
-        itemdX = (funcW - labelW * 2 - inputW * 2) // (itemNX - 1)
-        itemdY = (funcH - itemNY * itemH) // (itemNY - 1)
-        x = [funcX + i * (itemW + itemdX) for i in range(itemNX)]
-        x = [funcX, 0, 0, 0]
-        x[1] = x[0] + labelW + itemdX
-        x[2] = x[1] + inputW + itemdX
-        x[3] = x[2] + labelW + itemdX
-
-        y = [funcY + i * (itemH + itemdY) for i in range(itemNY)]
+        sliderW, sliderH = 54, 54
+        funcW, funcH = 300, 600
+        winW, winH = WIDTH - funcW - sliderW, HEIGHT - sliderH
 
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(WIDTH, HEIGHT)
+        MainWindow.resize(WIDTH + 40, HEIGHT + 40)
         MainWindow.setFont(QtGui.QFont("宋体", 14))
         MainWindow.setWindowTitle("示波器")
-
-        # sliderStyleSheet =
-        """
-            QSlider::groove:vertical {
-                background: red;
-                position: absolute; /* absolutely position 4px from the left and right of the widget. setting margins on the widget should work too... */
-                left: 4px; right: 4px;
-            }
-
-            QSlider::handle:vertical {
-                height: 15px;
-                background: #439cf4;
-                margin: 0 -4px; /* expand outside the groove */
-            }
-
-            QSlider::add-page:vertical {
-                background: #439cf4;
-            }
-
-            QSlider::sub-page:vertical {
-                background: #cbcbcb;
-            }
-        """
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
         self.FigQGB = QtWidgets.QGroupBox(self.centralwidget)
-        self.FigQGB.setGeometry(QtCore.QRect(0, 0, winW, HEIGHT))
         self.FigQGB.setObjectName("FigQGB")
+        self.FigQGB.setGeometry(QtCore.QRect(0, 0, winW, winH))
 
-        self.CursorX, self.CursorY = [], []
-        self.CursorX.append(doubleSlider(self.centralwidget))
-        self.CursorX[0].setGeometry(QtCore.QRect(sx[0], sliderY, sliderW, sliderH))
-        self.CursorX[0].setOrientation(QtCore.Qt.Vertical)
+        self.fig = Myplot(width=5, height=5, dpi=100)
+
+        self.FigGrid = QtWidgets.QGridLayout(self.FigQGB)
+        self.FigGrid.setObjectName("FigGrid")
+        self.FigGrid.addWidget(self.fig)
+
+        self.HSliderQGB = QtWidgets.QGroupBox(self.centralwidget)
+        self.HSliderQGB.setObjectName("HSliderQGB")
+        self.HSliderQGB.setGeometry(QtCore.QRect(0, winH, winW, sliderH))
+
+        self.CursorX = []
+        self.CursorX.append(doubleSlider())
+        self.CursorX[0].setOrientation(QtCore.Qt.Horizontal)
         self.CursorX[0].setObjectName("CursorX0")
-        # self.CursorX[0].setStyleSheet(sliderStyleSheet)
 
-        self.CursorX.append(doubleSlider(self.centralwidget))
-        self.CursorX[1].setGeometry(QtCore.QRect(sx[1], sliderY, sliderW, sliderH))
-        self.CursorX[1].setOrientation(QtCore.Qt.Vertical)
+        self.CursorX.append(doubleSlider())
+        self.CursorX[1].setOrientation(QtCore.Qt.Horizontal)
         self.CursorX[1].setObjectName("CursorX1")
-        # self.CursorX[1].setStyleSheet(sliderStyleSheet)
 
-        self.CursorY.append(doubleSlider(self.centralwidget))
-        self.CursorY[0].setGeometry(QtCore.QRect(sx[2], sliderY, sliderW, sliderH))
+        self.HSliderGrid = QtWidgets.QVBoxLayout(self.HSliderQGB)
+        self.HSliderGrid.setObjectName("HSliderGrid")
+        self.HSliderGrid.addWidget(self.CursorX[0])
+        self.HSliderGrid.addWidget(self.CursorX[1])
+
+        self.VSliderQGB = QtWidgets.QGroupBox(self.centralwidget)
+        self.VSliderQGB.setObjectName("HSliderQGB")
+        self.VSliderQGB.setGeometry(QtCore.QRect(winW, 0, sliderW, winH))
+
+        self.CursorY = []
+        self.CursorY.append(doubleSlider())
         self.CursorY[0].setOrientation(QtCore.Qt.Vertical)
         self.CursorY[0].setObjectName("CursorY0")
-        self.CursorY[0].setParameters(-10, 10, 1000)
-        # self.CursorY[0].setStyleSheet(sliderStyleSheet)
 
-        self.CursorY.append(doubleSlider(self.centralwidget))
-        self.CursorY[1].setGeometry(QtCore.QRect(sx[3], sliderY, sliderW, sliderH))
+        self.CursorY.append(doubleSlider())
         self.CursorY[1].setOrientation(QtCore.Qt.Vertical)
         self.CursorY[1].setObjectName("CursorY1")
-        self.CursorY[1].setParameters(-10, 10, 1000)
-        # self.CursorY[1].setStyleSheet(sliderStyleSheet)
 
-        self.Trigger = doubleSlider(self.centralwidget)
-        self.Trigger.setGeometry(
-            QtCore.QRect(WIDTH - sliderW, sliderY, sliderW, sliderH)
-        )
-        self.Trigger.setOrientation(QtCore.Qt.Vertical)
-        self.Trigger.setObjectName("Trigger")
-        self.Trigger.setParameters(-10, 10, 1000)
-        self.Trigger.setValue(0)
+        self.VSliderGrid = QtWidgets.QHBoxLayout(self.VSliderQGB)
+        self.VSliderGrid.setObjectName("VSliderGrid")
+        self.VSliderGrid.addWidget(self.CursorY[0])
+        self.VSliderGrid.addWidget(self.CursorY[1])
 
-        self.RunButton = QtWidgets.QPushButton(self.centralwidget)
-        self.RunButton.setGeometry(QtCore.QRect(x[-1], y[0], btnW, btnH))
+        self.FuncQGB = QtWidgets.QGroupBox(self.centralwidget)
+        self.FuncQGB.setObjectName("FuncQGB")
+        self.FuncQGB.setGeometry(QtCore.QRect(winW + sliderW, 0, funcW, funcH))
+
+        self.RunButton = QtWidgets.QPushButton()
         self.RunButton.setObjectName("RunButton")
 
-        # 水平时基调整
-        i, j = 0, 1
-        self.tZoomLabel = QtWidgets.QLabel(self.centralwidget)
-        self.tZoomLabel.setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.tZoomLabel.setObjectName("tZoomLabel")
-        self.tZoomLabel.setText("时基")
-        self.tZoomInput = logSpinBox(self.centralwidget)
-        self.tZoomInput.setGeometry(QtCore.QRect(x[i + 1], y[j], inputW, inputH))
-        self.tZoomInput.setObjectName("tZoomInput")
-        self.tZoomInput.setParameters(mi=0.125, ma=10, step=0.5, decimal=3)
+        self.SourceLabel = QtWidgets.QLabel()
+        self.SourceLabel.setObjectName("SourceLabel")
+        self.SourceLabel.setText("源")
+        self.Source = QtWidgets.QComboBox()
+        self.Source.setObjectName("Source")
+        self.Source.addItems(("1", "2"))
 
-        # 显示选项
-        i, j = 2, 1
-        self.ModeLabel = QtWidgets.QLabel(self.centralwidget)
-        self.ModeSelect = QtWidgets.QComboBox(self.centralwidget)
-        self.ModeLabel.setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.ModeLabel.setObjectName("ModeLabel")
-        self.ModeLabel.setText("模式")
-        self.ModeSelect.setGeometry(QtCore.QRect(x[i + 1], y[j], selectW, selectH))
-        self.ModeSelect.setObjectName("Modeselect")
-        self.ModeSelect.addItems(("水平", "XY", "时谱图"))
+        self.WinLabel = QtWidgets.QLabel()
+        self.WinLabel.setObjectName("WinLabel")
+        self.WinLabel.setText("窗类型")
+        self.WinSelect = QtWidgets.QComboBox()
+        self.WinSelect.setObjectName("WinSelect")
+        self.WinSelect.addItems(("矩形窗", "汉明窗"))
 
-        # 测量面板
-        i, j = 0, 2
-        self.CursorLabel = QtWidgets.QLabel(self.centralwidget)
-        self.CursorLabel.setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.CursorLabel.setObjectName("CursorLabel")
-        self.CursorLabel.setText("光标源")
-        self.CursorSource = QtWidgets.QComboBox(self.centralwidget)
-        self.CursorSource.setGeometry(QtCore.QRect(x[i + 1], y[j], selectW, selectH))
-        self.CursorSource.setObjectName("CursorSource")
-        self.CursorSource.addItems(("1", "2"))
-
-        # 触发设置
-        i, j = 2, 2
-        self.TriggerSourceLabel = QtWidgets.QLabel(self.centralwidget)
-        self.TriggerSourceLabel.setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.TriggerSourceLabel.setObjectName("TriggerSourceLabel")
-        self.TriggerSourceLabel.setText("触发源")
-        self.TriggerSource = QtWidgets.QComboBox(self.centralwidget)
-        self.TriggerSource.setGeometry(QtCore.QRect(x[i + 1], y[j], selectW, selectH))
-        self.TriggerSource.setObjectName("TriggerSource")
-        self.TriggerSource.addItems(("1", "2"))
-        self.TriggerSlopeLabel = QtWidgets.QLabel(self.centralwidget)
-        self.TriggerSlopeLabel.setGeometry(QtCore.QRect(x[i], y[j + 1], labelW, labelH))
-        self.TriggerSlopeLabel.setObjectName("TriggerSlopeLabel")
-        self.TriggerSlopeLabel.setText("边沿")
-        self.TriggerSlopeSelect = QtWidgets.QComboBox(self.centralwidget)
-        self.TriggerSlopeSelect.setGeometry(
-            QtCore.QRect(x[i + 1], y[j + 1], selectW, selectH)
-        )
-        self.TriggerSlopeSelect.setObjectName("TriggerSlopeSelect")
-        self.TriggerSlopeSelect.addItems(("上升", "下降"))
-
-        # fft控制
-        i, j = 0, 14
-        self.fftLabel = QtWidgets.QLabel(self.centralwidget)
-        self.fftLabel.setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.fftLabel.setObjectName("fftLabel")
-        self.fftLabel.setText("FFT")
-
-        self.fftChanLabel = QtWidgets.QLabel(self.centralwidget)
-        self.fftChanLabel.setGeometry(QtCore.QRect(x[i], y[j + 1], labelW, labelH))
-        self.fftChanLabel.setObjectName("fftChanLabel")
-        self.fftChanLabel.setText("源")
-        self.fftSource = QtWidgets.QComboBox(self.centralwidget)
-        self.fftSource.setGeometry(QtCore.QRect(x[i + 1], y[j + 1], selectW, selectH))
-        self.fftSource.setObjectName("fftSource")
-        self.fftSource.addItems(("1", "2"))
-
-        self.fftWinLabel = QtWidgets.QLabel(self.centralwidget)
-        self.fftWinLabel.setGeometry(QtCore.QRect(x[i], y[j + 2], labelW, labelH))
-        self.fftWinLabel.setObjectName("fftWinLabel")
-        self.fftWinLabel.setText("窗类型")
-        self.fftWinSelect = QtWidgets.QComboBox(self.centralwidget)
-        self.fftWinSelect.setGeometry(
-            QtCore.QRect(x[i + 1], y[j + 2], selectW, selectH)
-        )
-        self.fftWinSelect.setObjectName("fftWinSelect")
-        self.fftWinSelect.addItems(("矩形窗", "汉明窗"))
-
-        self.fftNLabel = QtWidgets.QLabel(self.centralwidget)
-        self.fftNLabel.setGeometry(QtCore.QRect(x[i], y[j + 3], labelW, labelH))
+        self.fftNLabel = QtWidgets.QLabel()
         self.fftNLabel.setObjectName("fftNLabel")
         self.fftNLabel.setText("N")
-        self.fftN = logSpinBox(self.centralwidget)
-        self.fftN.setGeometry(QtCore.QRect(x[i + 1], y[j + 3], inputW, labelH))
+        self.fftN = logSpinBox()
+        self.fftN.setObjectName("fftN")
         self.fftN.setDecimals(0)
         self.fftN.setRange(1, 16384)
         self.fftN.setSingleStep(2)
-        self.fftN.setValue(4096)
+        self.fftN.setValue(2048)
 
-        self.TSNLabel = QtWidgets.QLabel(self.centralwidget)
-        self.TSNLabel.setGeometry(QtCore.QRect(x[i], y[j + 4], labelW, labelH))
-        self.TSNLabel.setObjectName("TSNLabel")
-        self.TSNLabel.setText("N")
-        self.TSN = QtWidgets.QDoubleSpinBox(self.centralwidget)
-        self.TSN.setGeometry(QtCore.QRect(x[i + 1], y[j + 4], inputW, labelH))
-        self.TSN.setDecimals(0)
-        self.TSN.setRange(1, 200)
-        self.TSN.setSingleStep(1)
-        self.TSN.setValue(100)
-
-        self.fftRangeLabel = [
-            QtWidgets.QLabel(self.centralwidget),
-            QtWidgets.QLabel(self.centralwidget),
+        self.RangeLabel = [
+            QtWidgets.QLabel(),
+            QtWidgets.QLabel(),
         ]
-        self.fftRangeInput = [
-            QtWidgets.QDoubleSpinBox(self.centralwidget),
-            QtWidgets.QDoubleSpinBox(self.centralwidget),
+        self.RangeInput = [
+            QtWidgets.QDoubleSpinBox(),
+            QtWidgets.QDoubleSpinBox(),
         ]
-        self.fftRangeLabel[0].setGeometry(
-            QtCore.QRect(x[i + 2], y[j + 1], labelW, labelH)
-        )
-        self.fftRangeLabel[0].setObjectName("fftRangeLabel0")
-        self.fftRangeLabel[0].setText("fmin")
-        self.fftRangeInput[0].setGeometry(
-            QtCore.QRect(x[i + 3], y[j + 1], inputW, inputH)
-        )
-        self.fftRangeInput[0].setObjectName("fftRangeInput0")
-        self.fftRangeInput[0].setRange(0, 22050)
-        self.fftRangeInput[0].setSingleStep(5)
-        self.fftRangeInput[0].setValue(0)
-        self.fftRangeLabel[1].setGeometry(
-            QtCore.QRect(x[i + 2], y[j + 2], labelW, labelH)
-        )
-        self.fftRangeLabel[1].setObjectName("fftRangeLabel1")
-        self.fftRangeLabel[1].setText("fmax")
-        self.fftRangeInput[1].setGeometry(
-            QtCore.QRect(x[i + 3], y[j + 2], inputW, inputH)
-        )
-        self.fftRangeInput[1].setObjectName("fftRangeInput1")
-        self.fftRangeInput[1].setRange(0, 22050)
-        self.fftRangeInput[1].setSingleStep(5)
-        self.fftRangeInput[1].setValue(22050)
+        self.RangeLabel[0].setObjectName("RangeLabel0")
+        self.RangeLabel[0].setText("fmin")
+        self.RangeInput[0].setObjectName("RangeInput0")
+        self.RangeInput[0].setRange(0, 22050)
+        self.RangeInput[0].setSingleStep(1000)
+        self.RangeInput[0].setValue(0)
+        self.RangeLabel[1].setObjectName("RangeLabel1")
+        self.RangeLabel[1].setText("fmax")
+        self.RangeInput[1].setObjectName("RangeInput1")
+        self.RangeInput[1].setRange(0, 22050)
+        self.RangeInput[1].setSingleStep(1000)
+        self.RangeInput[1].setValue(22050)
 
-        self.fftCursorLabel = [
-            QtWidgets.QLabel(self.centralwidget),
-            QtWidgets.QLabel(self.centralwidget),
-        ]
-        self.fftCursorInput = [
-            QtWidgets.QDoubleSpinBox(self.centralwidget),
-            QtWidgets.QDoubleSpinBox(self.centralwidget),
-        ]
-        self.fftCursorLabel[0].setGeometry(
-            QtCore.QRect(x[i + 2], y[j + 3], labelW, labelH)
-        )
-        self.fftCursorLabel[0].setObjectName("fftCursorLabel0")
-        self.fftCursorLabel[0].setText("f1")
-        self.fftCursorInput[0].setGeometry(
-            QtCore.QRect(x[i + 3], y[j + 3], inputW, inputH)
-        )
-        self.fftCursorInput[0].setObjectName("fftCursorInput0")
-        self.fftCursorInput[0].setRange(0, 22050)
-        self.fftCursorInput[0].setSingleStep(1)
-        self.fftCursorInput[0].setValue(0)
-        self.fftCursorLabel[1].setGeometry(
-            QtCore.QRect(x[i + 2], y[j + 4], labelW, labelH)
-        )
-        self.fftCursorLabel[1].setObjectName("fftCursorLabel1")
-        self.fftCursorLabel[1].setText("f2")
-        self.fftCursorInput[1].setGeometry(
-            QtCore.QRect(x[i + 3], y[j + 4], inputW, inputH)
-        )
-        self.fftCursorInput[1].setObjectName("fftCursorInput1")
-        self.fftCursorInput[1].setRange(0, 22050)
-        self.fftCursorInput[1].setSingleStep(1)
-        self.fftCursorInput[1].setValue(22050)
-
-        # 通道控制
-        (
-            self.ChannelLabel,
-            self.ZoomLabel,
-            self.ZoomInput,
-            self.OffsetLabel,
-            self.OffsetInput,
-        ) = ([], [], [], [], [])
-
-        i, j = 0, 11
-        self.ChannelLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.ChannelLabel[0].setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.ChannelLabel[0].setObjectName("ChannelLabel_1")
-        self.ChannelLabel[0].setText("通道1")
-
-        self.ZoomLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.ZoomLabel[0].setGeometry(QtCore.QRect(x[i], y[j + 1], labelW, labelH))
-        self.ZoomLabel[0].setObjectName("ZoomLabel_1")
-        self.ZoomLabel[0].setText("Zoom")
-
-        self.ZoomInput.append(logSpinBox(self.centralwidget))
-        self.ZoomInput[0].setGeometry(QtCore.QRect(x[i + 1], y[j + 1], inputW, inputH))
-        self.ZoomInput[0].setObjectName("ZoomInput_1")
-        self.ZoomInput[0].setParameters(mi=0.01, ma=20, step=0.5, decimal=3)
-
-        self.OffsetLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.OffsetLabel[0].setGeometry(QtCore.QRect(x[i], y[j + 2], labelW, labelH))
-        self.OffsetLabel[0].setObjectName("OffsetLabel_1")
-        self.OffsetLabel[0].setText("Offset")
-
-        self.OffsetInput.append(QtWidgets.QDoubleSpinBox(self.centralwidget))
-        self.OffsetInput[0].setGeometry(
-            QtCore.QRect(x[i + 1], y[j + 2], inputW, inputH)
-        )
-        self.OffsetInput[0].setSingleStep(0.5)
-        self.OffsetInput[0].setObjectName("OffsetInput_1")
-        self.OffsetInput[0].setMinimum(-10)
-        self.OffsetInput[0].setMaximum(10)
-
-        i, j = 2, 11
-        self.ChannelLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.ChannelLabel[1].setGeometry(QtCore.QRect(x[i], y[j], labelW, labelH))
-        self.ChannelLabel[1].setObjectName("ChannelLabel_2")
-        self.ChannelLabel[1].setText("通道2")
-
-        self.ZoomLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.ZoomLabel[1].setGeometry(QtCore.QRect(x[i], y[j + 1], labelW, labelH))
-        self.ZoomLabel[1].setObjectName("ZoomLabel_2")
-        self.ZoomLabel[1].setText("Zoom")
-        self.ZoomInput.append(logSpinBox(self.centralwidget))
-        self.ZoomInput[1].setGeometry(QtCore.QRect(x[i + 1], y[j + 1], inputW, inputH))
-        self.ZoomInput[1].setObjectName("ZoomInput_2")
-        self.ZoomInput[1].setParameters(mi=0.01, ma=20, step=0.5, decimal=3)
-
-        self.OffsetLabel.append(QtWidgets.QLabel(self.centralwidget))
-        self.OffsetLabel[1].setGeometry(QtCore.QRect(x[i], y[j + 2], labelW, labelH))
-        self.OffsetLabel[1].setObjectName("OffsetLabel_2")
-        self.OffsetLabel[1].setText("Offset")
-        self.OffsetInput.append(QtWidgets.QDoubleSpinBox(self.centralwidget))
-        self.OffsetInput[1].setGeometry(
-            QtCore.QRect(x[i + 1], y[j + 2], inputW, inputH)
-        )
-        self.OffsetInput[1].setSingleStep(0.5)
-        self.OffsetInput[1].setObjectName("OffsetInput_2")
-        self.OffsetInput[1].setMinimum(-10)
-        self.OffsetInput[1].setMaximum(10)
+        self.FuncGrid = QtWidgets.QGridLayout(self.FuncQGB)
+        self.FuncGrid.setObjectName("FuncGrid")
+        self.FuncGrid.addWidget(self.RunButton, 0, 1)
+        self.FuncGrid.addWidget(self.SourceLabel, 1, 0)
+        self.FuncGrid.addWidget(self.Source, 1, 1)
+        self.FuncGrid.addWidget(self.WinLabel, 2, 0)
+        self.FuncGrid.addWidget(self.WinSelect, 2, 1)
+        self.FuncGrid.addWidget(self.fftNLabel, 3, 0)
+        self.FuncGrid.addWidget(self.fftN, 3, 1)
+        self.FuncGrid.addWidget(self.RangeLabel[0], 4, 0)
+        self.FuncGrid.addWidget(self.RangeInput[0], 4, 1)
+        self.FuncGrid.addWidget(self.RangeLabel[1], 5, 0)
+        self.FuncGrid.addWidget(self.RangeInput[1], 5, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -378,7 +273,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "示波器"))
-        # self.PlotQGB.setTitle(_translate("MainWindow", "波形"))
         self.RunButton.setText(_translate("MainWindow", "Stop"))
         self.RunButton.setStyleSheet("background-color: red;")
 

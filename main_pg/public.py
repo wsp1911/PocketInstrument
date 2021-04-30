@@ -1,10 +1,35 @@
-from PyQt5.QtWidgets import QDoubleSpinBox, QSlider, QMainWindow, QApplication
+from PyQt5.QtWidgets import (
+    QDoubleSpinBox,
+    QSlider,
+    QMainWindow,
+    QApplication,
+    QVBoxLayout,
+    QLabel,
+)
+from PyQt5.QtCore import Qt
 import numpy as np
 import wave
 from scipy import signal
 from scipy.io import savemat, loadmat
 import pandas as pd
 import sys
+
+
+class DataGrid(QVBoxLayout):
+    def __init__(self, parent=None, data_list={}):
+        super(DataGrid, self).__init__(parent)
+        self.data_dict = {}
+        self.labels = []
+        self.data = []
+        for i in range(len(data_list[0])):
+            self.labels.append(QLabel(data_list[0][i]))
+            self.addWidget(self.labels[-1])
+            self.data.append(QLabel(str(data_list[1][i]), alignment=Qt.AlignRight))
+            self.addWidget(self.data[-1])
+            self.data_dict[data_list[0][i]] = i
+
+    def setData(self, key, s):
+        self.data[self.data_dict[key]].setText(s)
 
 
 class logSpinBox(QDoubleSpinBox):
@@ -138,170 +163,6 @@ class doubleSlider(QSlider):
             self.__step = (self.__ma - self.__mi) / (
                 super(doubleSlider, self).maximum()
             )
-
-
-class myPlotWidget(pg.PlotWidget):
-    def setRange(
-        self,
-        rect=None,
-        xRange=None,
-        yRange=None,
-        padding=None,
-        update=True,
-        disableAutoRange=True,
-    ):
-        """
-        Set the visible range of the ViewBox.
-        Must specify at least one of *rect*, *xRange*, or *yRange*.
-
-        ================== =====================================================================
-        **Arguments:**
-        *rect*             (QRectF) The full range that should be visible in the view box.
-        *xRange*           (min,max) The range that should be visible along the x-axis.
-        *yRange*           (min,max) The range that should be visible along the y-axis.
-        *padding*          (float) Expand the view by a fraction of the requested range.
-                           By default, this value is set between 0.02 and 0.1 depending on
-                           the size of the ViewBox.
-        *update*           (bool) If True, update the range of the ViewBox immediately.
-                           Otherwise, the update is deferred until before the next render.
-        *disableAutoRange* (bool) If True, auto-ranging is diabled. Otherwise, it is left
-                           unchanged.
-        ================== =====================================================================
-
-        """
-
-        changes = {}  # axes
-        setRequested = [False, False]
-
-        if rect is not None:
-            changes = {0: [rect.left(), rect.right()], 1: [rect.top(), rect.bottom()]}
-            setRequested = [True, True]
-        if xRange is not None:
-            changes[0] = xRange
-            setRequested[0] = True
-        if yRange is not None:
-            changes[1] = yRange
-            setRequested[1] = True
-
-        if len(changes) == 0:
-            print(rect)
-            raise Exception(
-                "Must specify at least one of rect, xRange, or yRange. (gave rect=%s)"
-                % str(type(rect))
-            )
-
-        # Update axes one at a time
-        changed = [False, False]
-
-        # Disable auto-range for each axis that was requested to be set
-        if disableAutoRange:
-            xOff = False if setRequested[0] else None
-            yOff = False if setRequested[1] else None
-            self.enableAutoRange(x=xOff, y=yOff)
-            changed.append(True)
-
-        limits = (self.state["limits"]["xLimits"], self.state["limits"]["yLimits"])
-        minRng = [self.state["limits"]["xRange"][0], self.state["limits"]["yRange"][0]]
-        maxRng = [self.state["limits"]["xRange"][1], self.state["limits"]["yRange"][1]]
-
-        for ax, range in changes.items():
-            mn = min(range)
-            mx = max(range)
-
-            # If we requested 0 range, try to preserve previous scale.
-            # Otherwise just pick an arbitrary scale.
-            if mn == mx:
-                dy = self.state["viewRange"][ax][1] - self.state["viewRange"][ax][0]
-                if dy == 0:
-                    dy = 1
-                mn -= dy * 0.5
-                mx += dy * 0.5
-                xpad = 0.0
-
-            # Make sure no nan/inf get through
-            if not all(np.isfinite([mn, mx])):
-                raise Exception("Cannot set range [%s, %s]" % (str(mn), str(mx)))
-
-            # Apply padding
-            if padding is None:
-                xpad = self.suggestPadding(ax)
-            else:
-                xpad = padding
-            p = (mx - mn) * xpad
-            mn -= p
-            mx += p
-
-            # max range cannot be larger than bounds, if they are given
-            if limits[ax][0] is not None and limits[ax][1] is not None:
-                if maxRng[ax] is not None:
-                    maxRng[ax] = min(maxRng[ax], limits[ax][1] - limits[ax][0])
-                else:
-                    maxRng[ax] = limits[ax][1] - limits[ax][0]
-
-            # If we have limits, we will have at least a max range as well
-            if maxRng[ax] is not None or minRng[ax] is not None:
-                diff = mx - mn
-                if maxRng[ax] is not None and diff > maxRng[ax]:
-                    delta = maxRng[ax] - diff
-                elif minRng[ax] is not None and diff < minRng[ax]:
-                    delta = minRng[ax] - diff
-                else:
-                    delta = 0
-
-                mn -= delta / 2.0
-                mx += delta / 2.0
-
-            # Make sure our requested area is within limits, if any
-            if limits[ax][0] is not None or limits[ax][1] is not None:
-                lmn, lmx = limits[ax]
-                if lmn is not None and mn < lmn:
-                    delta = (
-                        lmn - mn
-                    )  # Shift the requested view to match our lower limit
-                    mn = lmn
-                    mx += delta
-                elif lmx is not None and mx > lmx:
-                    delta = lmx - mx
-                    mx = lmx
-                    mn += delta
-
-            # Set target range
-            if self.state["targetRange"][ax] != [mn, mx]:
-                self.state["targetRange"][ax] = [mn, mx]
-                changed[ax] = True
-
-        # Update viewRange to match targetRange as closely as possible while
-        # accounting for aspect ratio constraint
-        lockX, lockY = setRequested
-        if lockX and lockY:
-            lockX = False
-            lockY = False
-        self.updateViewRange(lockX, lockY)
-
-        # If nothing has changed, we are done.
-        if any(changed):
-            # Update target rect for debugging
-            if self.target.isVisible():
-                self.target.setRect(
-                    self.mapRectFromItem(self.childGroup, self.targetRect())
-                )
-
-            # If ortho axes have auto-visible-only, update them now
-            # Note that aspect ratio constraints and auto-visible probably do not work together..
-            if (
-                changed[0]
-                and self.state["autoVisibleOnly"][1]
-                and (self.state["autoRange"][0] is not False)
-            ):
-                self._autoRangeNeedsUpdate = True
-            elif (
-                changed[1]
-                and self.state["autoVisibleOnly"][0]
-                and (self.state["autoRange"][1] is not False)
-            ):
-                self._autoRangeNeedsUpdate = True
-
-            self.sigStateChanged.emit(self)
 
 
 def save_data(filename, data, out_format, channels=0, sampwidth=0, rate=0):

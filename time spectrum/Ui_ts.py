@@ -63,11 +63,12 @@ class Ui_MainWindow(object):
         self.fig = Myplot(width=5, height=5, dpi=100)
 
         self.FigGrid = QtWidgets.QGridLayout(self.FigQGB)
+        self.FigGrid.setObjectName("FigGrid")
         self.FigGrid.addWidget(self.fig)
 
         self.FuncQGB = QtWidgets.QGroupBox(self.centralwidget)
-        self.FuncQGB.setGeometry(QtCore.QRect(HEIGHT, 0, WIDTH - HEIGHT, 200))
         self.FuncQGB.setObjectName("FuncQGB")
+        self.FuncQGB.setGeometry(QtCore.QRect(HEIGHT, 0, WIDTH - HEIGHT, 300))
 
         self.RunButton = QtWidgets.QPushButton()
         self.RunButton.setObjectName("RunButton")
@@ -84,6 +85,7 @@ class Ui_MainWindow(object):
         self.SaveButton.setText("保存图片")
 
         self.FuncGrid = QtWidgets.QGridLayout(self.FuncQGB)
+        self.FuncGrid.setObjectName("FuncGrid")
         self.FuncGrid.addWidget(self.RunButton, 0, 1)
         self.FuncGrid.addWidget(self.SourceLabel, 1, 0)
         self.FuncGrid.addWidget(self.Source, 1, 1)
@@ -104,7 +106,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "示波器"))
-        # self.PlotQGB.setTitle(_translate("MainWindow", "波形"))
         self.RunButton.setText(_translate("MainWindow", "Stop"))
         self.RunButton.setStyleSheet("background-color: red;")
 

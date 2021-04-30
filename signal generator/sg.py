@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 import matplotlib
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
+
 
 # from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout
 from PyQt5.QtCore import pyqtSlot
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
+
 import numpy as np
 import sys, time
 
-from Ui_sg import Ui_MainWindow
+from Ui_SignalGenerator import Ui_SignalGenerator
 from sigGenerate import getWave
 
 # import wave
@@ -33,48 +31,9 @@ matplotlib.rcParams["font.sans-serif"] = ["SimHei"]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
 
-class Myplot(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=3, dpi=100):
-        # new figure
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        FigureCanvas.__init__(self, self.fig)
-        self.setParent(parent)
-
-        self.ax_sig = self.fig.add_axes([0, 0, 1, 1])
-
-        # initial figure
-        self.compute_initial_figure()
-
-        # size policy
-        FigureCanvas.setSizePolicy(
-            self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
-        FigureCanvas.updateGeometry(self)
-
-    def set_ax(self):
-        d = 0.03
-        self.ax_sig.set_xlim((-d, 1 + d))
-        self.ax_sig.set_ylim((-d, 1 + d))
-        self.ax_sig.set_xticks([])
-        self.ax_sig.set_yticks([])
-
-    def compute_initial_figure(self):
-        pass
-
-
-class AppWindow(QMainWindow, Ui_MainWindow):
+class SignalGenerator(Ui_SignalGenerator):
     def __init__(self, parent=None):
-        super(AppWindow, self).__init__(parent)
-        self.setupUi(self)
-
-        self.fig = [
-            Myplot(width=5, height=5, dpi=100),
-            Myplot(width=5, height=5, dpi=100),
-        ]
-        self.gridlayout0 = QGridLayout(self.QGB0)
-        self.gridlayout0.addWidget(self.fig[0])
-        self.gridlayout1 = QGridLayout(self.QGB1)
-        self.gridlayout1.addWidget(self.fig[1])
+        super(SignalGenerator, self).__init__(parent)
 
         self.factor = 1 / 15
         self.REFRESH = [False, False]
@@ -165,18 +124,18 @@ class AppWindow(QMainWindow, Ui_MainWindow):
             )
 
             for id in [0, 1]:
-                self.fig[id].ax_sig.cla()
+                self.fig[id].ax.cla()
                 self.fig[id].set_ax()
                 if type(y[id]) == bool:
-                    self.fig[id].ax_sig.plot([0, 1], [0.5, 0.5], c="r")
+                    self.fig[id].ax.plot([0, 1], [0.5, 0.5], c="r")
                     y[id] = np.zeros(self.CHUNK)
                 elif wave_type[id] == 7:
-                    self.fig[id].ax_sig.plot(
+                    self.fig[id].ax.plot(
                         np.linspace(0, 1, num=len(y[id])),
                         y[id] / 2 + 0.5,
                     )
                 else:
-                    self.fig[id].ax_sig.plot(
+                    self.fig[id].ax.plot(
                         np.linspace(0, 1, num=2 * len(y[id])),
                         np.tile((y[id] / 2 + 0.5), 2),
                     )
@@ -211,7 +170,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    win = AppWindow()
+    win = SignalGenerator()
     win.show()
     t1 = threading.Thread(target=win.play)
     t1.start()

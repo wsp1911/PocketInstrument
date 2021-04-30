@@ -28,6 +28,8 @@ matplotlib.rcParams["text.color"] = "white"
 # normalized for 中文显示和负号
 matplotlib.rcParams["font.sans-serif"] = ["SimHei"]
 matplotlib.rcParams["axes.unicode_minus"] = False
+# matplotlib.rcParams["xtick.direction"] = "in"  # 将x周的刻度线方向设置向内
+# matplotlib.rcParams["ytick.direction"] = "in"  # 将y轴的刻度方向设置向内
 
 
 # class for the application window

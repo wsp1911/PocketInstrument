@@ -46,9 +46,9 @@ class Ui_SignalGenerator(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(Ui_SignalGenerator, self).__init__(parent=parent)
 
-        WIDTH, HEIGHT = 1200, 900
+        WIDTH, HEIGHT = 1200, 800
         dispW, dispH = (WIDTH - 200) // 2, 200
-        funcW, funcH = WIDTH - (WIDTH - 2 * dispW) // 2, HEIGHT - dispH - 200
+        funcW, funcH = WIDTH - (WIDTH - 2 * dispW) // 2, HEIGHT - dispH - 100
         x, y = (WIDTH - funcW) // 2, (HEIGHT - funcH - dispH) * 2 // 3 + dispH
         x2 = WIDTH // 2 + x
 

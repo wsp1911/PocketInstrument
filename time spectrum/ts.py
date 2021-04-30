@@ -5,7 +5,6 @@ import matplotlib
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtCore import pyqtSlot
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy import pi, sin, cos
 import sys, time
@@ -139,7 +138,7 @@ class AppWindow(QMainWindow, Ui_MainWindow):
 
         return (y * 32768).astype(np.int16).tobytes()
 
-    def play(self, filepath=None):
+    def run(self, filepath=None):
         pa = PyAudio()
         stream = pa.open(
             format=self.FORMAT,
@@ -150,8 +149,8 @@ class AppWindow(QMainWindow, Ui_MainWindow):
         )
         while True:
             if self.RUNNING:
-                # raw_data = stream.read(self.CHUNK)  # 读取chunk个字节 保存到data中
-                raw_data = self.genDebugData()
+                raw_data = stream.read(self.CHUNK)  # 读取chunk个字节 保存到data中
+                # raw_data = self.genDebugData()
                 data = np.frombuffer(raw_data, dtype=np.int16) / 32768
                 self.signal[0] = self.factor * data[::2]
                 self.signal[1] = self.factor * data[1::2]
@@ -166,6 +165,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = AppWindow()
     win.show()
-    t1 = threading.Thread(target=win.play)
+    t1 = threading.Thread(target=win.run)
     t1.start()
     sys.exit(app.exec_())
